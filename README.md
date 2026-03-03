@@ -16,6 +16,10 @@
 </p>
 
 <p align="center">
+  <strong>English</strong> | <a href="README_CN.md">中文</a>
+</p>
+
+<p align="center">
   <img src="demo.gif" alt="Claude-Recap demo: automatic topic archival and cross-session memory" width="800" />
 </p>
 
