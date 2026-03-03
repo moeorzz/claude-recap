@@ -7,6 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
   <img src="https://img.shields.io/badge/shell-bash-green" alt="Shell" />
+  <img src="https://img.shields.io/badge/Node.js-18+-339933" alt="Node.js" />
   <img src="https://img.shields.io/badge/Claude_Code-plugin-D97757" alt="Claude Code Plugin" />
 </p>
 
