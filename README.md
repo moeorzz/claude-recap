@@ -5,8 +5,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version" />
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
+  <a href="https://github.com/hatawong/claude-recap/releases"><img src="https://img.shields.io/github/v/release/hatawong/claude-recap?label=version" alt="Version" /></a>
+  <a href="https://github.com/hatawong/claude-recap/blob/main/LICENSE"><img src="https://img.shields.io/github/license/hatawong/claude-recap" alt="License" /></a>
+  <a href="https://github.com/hatawong/claude-recap/stargazers"><img src="https://img.shields.io/github/stars/hatawong/claude-recap" alt="Stars" /></a>
+  <a href="https://github.com/hatawong/claude-recap/issues"><img src="https://img.shields.io/github/issues/hatawong/claude-recap" alt="Issues" /></a>
+  <a href="https://github.com/hatawong/claude-recap/commits/main"><img src="https://img.shields.io/github/last-commit/hatawong/claude-recap" alt="Last Commit" /></a>
   <img src="https://img.shields.io/badge/shell-bash-green" alt="Shell" />
   <img src="https://img.shields.io/badge/Node.js-18+-339933" alt="Node.js" />
   <img src="https://img.shields.io/badge/Claude_Code-plugin-D97757" alt="Claude Code Plugin" />
