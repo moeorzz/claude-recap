@@ -3,7 +3,10 @@
 **Topic-based automatic memory for Claude Code — never lose context across sessions or compactions.**
 
 <!-- TODO: badges (license, version, shell) -->
-<!-- TODO: demo GIF -->
+
+<p align="center">
+  <img src="demo.gif" alt="claude-recap demo: automatic topic archival and cross-session memory" width="800" />
+</p>
 
 ## The Problem
 
