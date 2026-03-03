@@ -134,6 +134,13 @@ Your data in `~/.memory/` is preserved — uninstalling does not delete memory f
 
 Or enable auto-update via `/plugin` → Marketplaces → "Enable auto-update".
 
+## Documentation
+
+- [Architecture](docs/architecture.md) — How the hooks, scripts, and cold-read pipeline work
+- [Design Decisions](docs/design-decisions.md) — Why topic-based, why Markdown, why hooks
+- [FAQ & Troubleshooting](docs/faq.md) — Common questions and solutions
+- [Advanced Usage](docs/advanced-usage.md) — Custom storage, dev mode, manual setup
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
