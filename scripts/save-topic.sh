@@ -71,10 +71,19 @@ if { [ -f "$COMPACTED_FILE" ] || [ "$COLD_READ" = true ]; } && [ -f "$JSONL_PATH
     if COLD_SUMMARY=$(bash "$COLD_SUMMARIZE" "$EXTRACTED_FILE" "$PLUGIN_ROOT" "$JSONL_PATH"); then
       SUMMARY="$COLD_SUMMARY"
       echo "Cold-read summary generated successfully" >&2
+    elif [ -f "$COMPACTED_FILE" ]; then
+      echo "WARNING: cold-read failed after compact — skipping (LLM summary unreliable). archive-pending will retry later." >&2
+      rm -f "$EXTRACTED_FILE"
+      exit 0
     else
       echo "WARNING: cold-read summarization failed, falling back to LLM summary" >&2
     fi
   else
+    if [ -f "$COMPACTED_FILE" ]; then
+      echo "WARNING: JSONL extraction failed after compact — skipping. archive-pending will retry later." >&2
+      rm -f "$EXTRACTED_FILE"
+      exit 0
+    fi
     echo "WARNING: JSONL extraction failed, falling back to LLM summary" >&2
   fi
   rm -f "$EXTRACTED_FILE"

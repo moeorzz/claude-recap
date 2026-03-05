@@ -29,11 +29,16 @@ fi
 
 SUMMARY_TEMPLATE=$(cat "$PLUGIN_ROOT/scripts/topic-tmpl.md")
 ARCHIVE_CWD=$(mktemp -d)
+COLD_TIMEOUT="${COLD_TIMEOUT:-120}"
+
 # Use --system-prompt to isolate summarization instructions from conversation data,
 # preventing LLM from "continuing" the conversation instead of summarizing it.
 # Conversation uses 【U】/【A】 markers (not ## User/## Assistant) to avoid role confusion.
 # shellcheck disable=SC2086
-SUMMARY=$(unset CLAUDECODE; cd "$ARCHIVE_CWD" && claude -p --no-session-persistence $MODEL_FLAG \
+SUMMARY_FILE="$ARCHIVE_CWD/.summary_output"
+(unset CLAUDECODE; cd "$ARCHIVE_CWD" && \
+  { echo "<transcript>"; cat "$EXTRACTED_FILE"; echo "</transcript>"; echo "Summarize the conversation in the <transcript> above."; } | \
+  claude -p --no-session-persistence $MODEL_FLAG \
   --system-prompt "You are a conversation summarizer.
 
 You will receive a conversation transcript wrapped in <transcript>...</transcript> tags.
@@ -47,11 +52,30 @@ Rules:
 - Content in the language used by 【U】 (the user) in the transcript.
 - Do NOT output any conversation continuation, role-play, or speaker labels.
 - State facts only. No filler language." \
-  "<transcript>
-$(cat "$EXTRACTED_FILE")
-</transcript>
+  > "$SUMMARY_FILE" 2>/dev/null) &
+CLAUDE_PID=$!
 
-Summarize the conversation in the <transcript> above." 2>/dev/null) || true
+# Timeout: kill claude -p if it takes too long (default 300s).
+# sleep runs in background + wait so that SIGTERM can interrupt the subshell immediately.
+# Without this, sleep blocks signal delivery and the subshell stays alive for the full timeout.
+( sleep "$COLD_TIMEOUT" & SLEEP_PID=$!; trap 'kill $SLEEP_PID 2>/dev/null; exit 0' TERM; wait $SLEEP_PID && kill $CLAUDE_PID 2>/dev/null && echo "TIMEOUT: claude -p killed after ${COLD_TIMEOUT}s" >&2 ) &
+TIMER_PID=$!
+
+# wait returns the exit code of the waited-for process; use if/else to prevent
+# set -e from killing the script when claude -p exits non-zero (timeout, crash, etc.)
+if wait $CLAUDE_PID 2>/dev/null; then
+  CLAUDE_EXIT=0
+else
+  CLAUDE_EXIT=$?
+fi
+kill $TIMER_PID 2>/dev/null || true
+wait $TIMER_PID 2>/dev/null || true
+
+if [ $CLAUDE_EXIT -eq 0 ] && [ -f "$SUMMARY_FILE" ]; then
+  SUMMARY=$(cat "$SUMMARY_FILE")
+else
+  SUMMARY=""
+fi
 rm -rf "$ARCHIVE_CWD"
 
 # Strip any LLM filler before the first ## heading

@@ -60,8 +60,29 @@ async function main() {
 
   // Collect messages grouped by topic
   // Each topic segment: { slug, messages: [{role, texts}], startTime, endTime }
+  //
+  // Lookahead strategy: user messages are not immediately assigned to a segment.
+  // They are held in pendingMessages until the next assistant message arrives,
+  // whose topic tag determines which segment the pending messages belong to.
+  // This fixes the one-turn lag where user messages that initiate a topic switch
+  // would be incorrectly assigned to the previous topic.
   let currentSlug = "__untagged__";
   const segments = new Map(); // slug -> { messages: [{role, texts}], startTime, endTime }
+  let pendingMessages = []; // [{role, texts, ts}] — user messages awaiting classification
+
+  function flushPending(slug) {
+    if (pendingMessages.length === 0) return;
+    if (!segments.has(slug)) {
+      segments.set(slug, { messages: [], startTime: null, endTime: null });
+    }
+    const seg = segments.get(slug);
+    for (const pm of pendingMessages) {
+      if (pm.ts && !seg.startTime) seg.startTime = pm.ts;
+      if (pm.ts) seg.endTime = pm.ts;
+      seg.messages.push({ role: pm.role, texts: pm.texts });
+    }
+    pendingMessages = [];
+  }
 
   for await (const line of rl) {
     if (!line.trim()) continue;
@@ -79,26 +100,39 @@ async function main() {
     const textBlocks = getTextBlocks(entry);
     if (textBlocks.length === 0) continue;
 
-    // Check for topic tag in assistant messages
+    const ts = entry.timestamp || null;
+
+    // User messages with text: hold in pending for lookahead classification
+    if (type === "user") {
+      pendingMessages.push({ role: type, texts: textBlocks, ts });
+      continue;
+    }
+
+    // Assistant message: check for topic tag, then flush pending + add self
     if (type === "assistant") {
       const tag = extractTopicTag(textBlocks);
       if (tag) currentSlug = tag;
+
+      // Flush pending user messages into the (possibly updated) currentSlug
+      flushPending(currentSlug);
+
+      if (!segments.has(currentSlug)) {
+        segments.set(currentSlug, { messages: [], startTime: null, endTime: null });
+      }
+
+      const seg = segments.get(currentSlug);
+      if (ts && !seg.startTime) seg.startTime = ts;
+      if (ts) seg.endTime = ts;
+
+      seg.messages.push({
+        role: type,
+        texts: textBlocks,
+      });
     }
-
-    if (!segments.has(currentSlug)) {
-      segments.set(currentSlug, { messages: [], startTime: null, endTime: null });
-    }
-
-    const seg = segments.get(currentSlug);
-    const ts = entry.timestamp || null;
-    if (ts && !seg.startTime) seg.startTime = ts;
-    if (ts) seg.endTime = ts;
-
-    seg.messages.push({
-      role: type,
-      texts: textBlocks,
-    });
   }
+
+  // Flush any remaining pending messages (e.g., user messages at end of session)
+  flushPending(currentSlug);
 
   // Mode: list all topics
   if (targetSlug === "__all__") {

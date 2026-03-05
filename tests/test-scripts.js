@@ -101,10 +101,10 @@ console.log('Test: extract-topic.js');
   ], { encoding: 'utf-8' });
 
   const topics = result.stdout.trim().split('\n');
-  assert(topics.includes('__untagged__'), '__all__: includes __untagged__');
+  assert(!topics.includes('__untagged__'), '__all__: no __untagged__ (lookahead assigns first user msg to first topic)');
   assert(topics.includes('greeting'), '__all__: includes greeting');
   assert(topics.includes('fix-app-bug'), '__all__: includes fix-app-bug');
-  assert(topics.length === 3, `__all__: exactly 3 topics (got ${topics.length})`);
+  assert(topics.length === 2, `__all__: exactly 2 topics (got ${topics.length})`);
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
 })();
@@ -455,6 +455,7 @@ console.log('Test: compact improvements');
       MEMORY_HOME: path.join(tmpDir, 'memory'),
       CLAUDE_CWD: '/test-project',
       HOME: tmpDir,
+      COLD_TIMEOUT: '5',
     },
   });
 
@@ -462,15 +463,17 @@ console.log('Test: compact improvements');
   // .compacted must be preserved — save-topic does NOT delete it
   assert(fs.existsSync(path.join(sessionDir, '.compacted')),
     'save-topic compacted: .compacted marker preserved');
-  // Archive file should exist
+  // After compact, cold-read failure should skip writing (no fallback to degraded LLM summary)
   const archiveFile = path.join(sessionDir, '01-greeting.md');
-  assert(fs.existsSync(archiveFile), 'save-topic compacted: archive file created');
+  assert(!fs.existsSync(archiveFile), 'save-topic compacted: no archive when cold-read fails (no fallback)');
   // .extracted file should be cleaned up
   assert(!fs.existsSync(path.join(sessionDir, '.extracted-greeting.md')),
     'save-topic compacted: extracted file cleaned up');
   // stderr should mention cold-reading attempt
   assert(result.stderr.includes('Compacted session detected'),
     'save-topic compacted: attempted cold-read');
+  assert(result.stderr.includes('skipping'),
+    'save-topic compacted: mentions skipping on cold-read failure');
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
 })();
@@ -541,6 +544,7 @@ console.log('Test: compact improvements');
       MEMORY_HOME: path.join(tmpDir, 'memory'),
       CLAUDE_CWD: '/test-project',
       HOME: tmpDir,
+      COLD_TIMEOUT: '5',
       // PATH intentionally not modified — claude CLI may or may not be available
     },
   });
@@ -581,7 +585,7 @@ console.log('Test: compact improvements');
     PLUGIN_DIR,
   ], {
     encoding: 'utf-8',
-    env: { ...process.env, HOME: tmpDir },
+    env: { ...process.env, HOME: tmpDir, COLD_TIMEOUT: '5' },
   });
 
   // archive-pending no longer skips .compacted sessions — it processes them
@@ -1145,7 +1149,7 @@ console.log('Test: save-topic.sh edge cases');
     '## Status\nFallback summary.'
   ], {
     encoding: 'utf-8',
-    env: { ...process.env, MEMORY_HOME: path.join(tmpDir, 'memory'), CLAUDE_CWD: '/test-project', HOME: tmpDir },
+    env: { ...process.env, MEMORY_HOME: path.join(tmpDir, 'memory'), CLAUDE_CWD: '/test-project', HOME: tmpDir, COLD_TIMEOUT: '5' },
   });
 
   assert(result.status === 0, '--cold: exits 0');

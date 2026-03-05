@@ -74,4 +74,5 @@ The script will extract the conversation from JSONL and generate a summary via `
 - If an existing file for this slug exists, it will be overwritten with the new summary.
 - This does NOT change the current topic — you continue with the same topic tag after saving.
 - The summary should cover the entire topic from the start, not just recent progress.
+- Do NOT copy or build upon any previous summary in your context. Write from scratch based on your full context each time.
 - For non-current topics, always use `--cold` — do not attempt to write summaries from degraded LLM memory.
