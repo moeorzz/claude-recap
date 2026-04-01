@@ -76,7 +76,9 @@ if [ $CLAUDE_EXIT -eq 0 ] && [ -f "$SUMMARY_FILE" ]; then
 else
   SUMMARY=""
 fi
-rm -rf "$ARCHIVE_CWD"
+# Git Bash on Windows can briefly keep the temp dir busy after claude -p exits.
+# Cleanup failure should not discard a valid summary.
+rm -rf "$ARCHIVE_CWD" 2>/dev/null || true
 
 # Strip any LLM filler before the first ## heading
 SUMMARY=$(echo "$SUMMARY" | sed -n '/^## /,$p')

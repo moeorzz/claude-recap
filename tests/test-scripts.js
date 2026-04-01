@@ -979,7 +979,12 @@ console.log('Test: session-start.sh injection');
   });
 
   assert(result.stdout.includes('Topic History'), 'topic history: header present');
+  assert(result.stdout.includes(sessionId), 'topic history: full session id listed');
   assert(result.stdout.includes('01-old-topic'), 'topic history: topic file listed');
+  assert(
+    result.stdout.includes('Use the exact session directory names shown below'),
+    'topic history: exact session directory guidance present'
+  );
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
 })();

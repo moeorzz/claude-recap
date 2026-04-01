@@ -11,7 +11,9 @@ SESSION_ID=$(echo "$INPUT" | jq -r '.session_id')
 SOURCE=$(echo "$INPUT" | jq -r '.source // "unknown"')
 
 echo "[SessionStart] session=$SESSION_ID source=$SOURCE"
-PROJECT_ID="${CWD//\//-}"
+# Normalize Windows paths to match Claude Code's project ID format
+# c:\pj\ADS or c:/pj/ADS → c--pj-ADS (colon→dash, slash→dash, no leading dash)
+PROJECT_ID=$(echo "$CWD" | sed 's_\\_/_g; s_:_-_; s_/_-_g')
 
 # MEMORY_HOME allows test isolation; defaults to ~/.memory
 MEMORY_ROOT="${MEMORY_HOME:-$HOME/.memory}"
@@ -60,7 +62,6 @@ if [ -d "$PROJECT_DIR" ]; then
     for session_dir in "$PROJECT_DIR"/*/; do
       [ ! -d "$session_dir" ] && continue
       sid=$(basename "$session_dir")
-      short=$(echo "$sid" | cut -c1-8)
 
       # List topic files (exclude hidden), sorted by name (= seq order)
       topics=$(find "$session_dir" -maxdepth 1 -name "*.md" -not -name ".*" 2>/dev/null | sed 's|.*/||; s|\.md$||' | sort)
@@ -75,11 +76,12 @@ if [ -d "$PROJECT_DIR" ]; then
       dt=$(date -r "$newest" "+%m-%d %H:%M" 2>/dev/null || date -d "@$newest" "+%m-%d %H:%M" 2>/dev/null)
 
       # Output: epoch|display_line (epoch for sorting, stripped later)
-      echo "${newest}|${short} (${dt}): $(echo "$topics" | paste -sd',' - | sed 's/,/, /g')"
+      echo "${newest}|${sid} (${dt}): $(echo "$topics" | paste -sd',' - | sed 's/,/, /g')"
     done | sort -rn | head -20 | cut -d'|' -f2-
   )
   if [ -n "$TOPIC_HISTORY" ]; then
     echo "=== Topic History for This Project (recent 20 sessions) ==="
+    echo "Use the exact session directory names shown below when reading memory files: $PROJECT_DIR/<session-id>/<topic>.md"
     echo "$TOPIC_HISTORY"
     echo ""
   fi
@@ -87,7 +89,7 @@ fi
 
 # Pull layer: tell Claude where to find memory files and scripts
 echo "Your persistent memory is stored at $PROJECT_DIR (session directories with topic files)."
-echo "If topic history files are listed above, check the user's first message to decide whether to cat any of them to restore context."
+echo "If topic history files are listed above, check the user's first message to decide whether to cat any of them to restore context. Use the exact full session directory names shown above."
 echo ""
 echo "Plugin scripts path: $PLUGIN_ROOT/scripts"
 echo ""

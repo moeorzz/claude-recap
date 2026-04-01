@@ -28,7 +28,9 @@ fi
 # CLAUDE_CWD: test-only override; in production pwd -P resolves symlinks (e.g. /tmp → /private/tmp)
 # to match Claude Code's resolved CWD in JSON input (used by hooks for PROJECT_ID)
 CWD="${CLAUDE_CWD:-$(pwd -P)}"
-PROJECT_ID="${CWD//\//-}"
+# Normalize Windows paths to match Claude Code's project ID format
+# c:\pj\ADS or c:/pj/ADS → c--pj-ADS (colon→dash, slash→dash, no leading dash)
+PROJECT_ID=$(echo "$CWD" | sed 's_\\_/_g; s_:_-_; s_/_-_g')
 MEMORY_ROOT="${MEMORY_HOME:-$HOME/.memory}"
 SESSION_DIR="$MEMORY_ROOT/projects/$PROJECT_ID/$SESSION_ID"
 END_TIME=$(date +"%Y-%m-%d %H:%M")

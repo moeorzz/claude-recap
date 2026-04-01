@@ -48,7 +48,9 @@ fi
 MEMORY_ROOT="${MEMORY_HOME:-$HOME/.memory}"
 CWD=$(echo "$INPUT" | jq -r '.cwd // ""')
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""')
-PROJECT_ID="${CWD//\//-}"
+# Normalize Windows paths to match Claude Code's project ID format
+# c:\pj\ADS or c:/pj/ADS → c--pj-ADS (colon→dash, slash→dash, no leading dash)
+PROJECT_ID=$(echo "$CWD" | sed 's_\\_/_g; s_:_-_; s_/_-_g')
 SESSION_DIR="$MEMORY_ROOT/projects/${PROJECT_ID}/${SESSION_ID}"
 TOPIC_FILE="$SESSION_DIR/.current_topic"
 OLD_TOPIC=$(cat "$TOPIC_FILE" 2>/dev/null || echo "none")

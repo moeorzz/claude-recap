@@ -37,9 +37,11 @@ if [ -f "$SETTINGS_FILE" ]; then
   # Merge: preserve other keys, overwrite hooks
   jq --arg ss "$REPO_ROOT/hooks/session-start.sh" \
      --arg stop "$REPO_ROOT/hooks/stop.sh" \
+     --arg end "$REPO_ROOT/hooks/session-end.sh" \
      '.hooks = {
         "SessionStart": [{"matcher": "startup|resume|clear|compact", "hooks": [{"type": "command", "command": $ss}]}],
-        "Stop": [{"hooks": [{"type": "command", "command": $stop}]}]
+        "Stop": [{"hooks": [{"type": "command", "command": $stop}]}],
+        "SessionEnd": [{"hooks": [{"type": "command", "command": $end}]}]
       }' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
 else
   cat > "$SETTINGS_FILE" <<EOF
@@ -55,6 +57,11 @@ else
       {
         "hooks": [{ "type": "command", "command": "$REPO_ROOT/hooks/stop.sh" }]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [{ "type": "command", "command": "$REPO_ROOT/hooks/session-end.sh" }]
+      }
     ]
   }
 }
@@ -64,6 +71,7 @@ fi
 echo "Registered hooks in $SETTINGS_FILE"
 echo "  SessionStart → $REPO_ROOT/hooks/session-start.sh"
 echo "  Stop         → $REPO_ROOT/hooks/stop.sh"
+echo "  SessionEnd   → $REPO_ROOT/hooks/session-end.sh"
 
 # Auto-symlink all skills from the repo
 SKILLS_DIR="$SETTINGS_DIR/skills"
