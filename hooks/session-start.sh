@@ -94,6 +94,15 @@ echo ""
 echo "Plugin scripts path: $PLUGIN_ROOT/scripts"
 echo ""
 
+cat <<'RECOVERY_RULE_EOF'
+=== Recovery Workflow ===
+For iterative development or bug-fix continuation:
+1. Prefer session-level recovery first when the user remembers the work thread/session.
+2. Use topic handoff files when the user remembers the topic/direction rather than the exact session.
+3. After reading any session/topic handoff, inspect the current repo state before coding. Handoffs are guidance, not the source of truth.
+RECOVERY_RULE_EOF
+echo ""
+
 # Push layer 3: inject topic tracking state
 STATE_FILE="$SESSION_DIR/.current_topic"
 if [ -f "$STATE_FILE" ]; then
